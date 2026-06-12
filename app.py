@@ -132,8 +132,9 @@ if uploaded_file is not None:
                 # --- EXCEL DOWNLOAD BUTTON SECTION ---
                 st.subheader("Export Options")
                 
-                # Format datetime column back to string for clean look in Excel
-                excel_df = filtered_df.copy()
+                # POPRAWKA: Wybieramy TYLKO pierwszą kolumnę (Data) oraz kolumny z prędkościami. 
+                # Druga kolumna (kierunek wiatru) zostaje całkowicie pominięta w strukturze pliku Excel.
+                excel_df = filtered_df[[dt_col] + new_value_cols].copy()
                 excel_df[dt_col] = excel_df[dt_col].dt.strftime('%Y-%m-%d %H:%M')
                 
                 excel_data = to_excel_with_chart(excel_df, dt_col, new_value_cols)
