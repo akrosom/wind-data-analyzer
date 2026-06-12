@@ -18,19 +18,29 @@ if uploaded_file is not None:
             # Try reading as CSV first (handles CSVs disguised with .xlsx/.xls extensions)
             if file_name.endswith(('.xlsx', '.xls')):
                 try:
-                    df = pd.read_csv(uploaded_file, sep=None, engine='python')
+                    # Explicitly try semicolon first, as seen in your data log
+                    df = pd.read_csv(uploaded_file, sep=';', engine='python')
+                    # If it failed to split (only 1 column found), try with comma
+                    if len(df.columns) < 2:
+                        uploaded_file.seek(0)
+                        df = pd.read_csv(uploaded_file, sep=',', engine='python')
                 except Exception:
                     # Fallback to standard Excel reader if it is a native Excel file
                     df = pd.read_excel(uploaded_file)
             else:
-                df = pd.read_csv(uploaded_file, sep=None, engine='python')
+                # Standard CSV handling with fallback
+                df = pd.read_csv(uploaded_file, sep=';', engine='python')
+                if len(df.columns) < 2:
+                    uploaded_file.seek(0)
+                    df = pd.read_csv(uploaded_file, sep=',', engine='python')
             
             if df.empty:
                 st.error("The uploaded file is empty.")
                 st.stop()
                 
             if len(df.columns) < 6:
-                st.error(f"The file must have at least 6 columns. Found only {len(df.columns)}.")
+                st.error(f"The file must have at least 6 columns. Found only {len(df.columns)}. "
+                         f"Please check if the separator in your file is a semicolon (;) or comma (,).")
                 st.stop()
             
             # Map columns by their position index:
@@ -43,12 +53,14 @@ if uploaded_file is not None:
             # Keep only the required columns to preserve memory
             df = df[[dt_col] + value_cols].copy()
             
-            # Convert first column to datetime and sort
-            df[dt_col] = pd.to_datetime(df[dt_col])
+            # Convert first column to datetime (handling mixed formats and trailing milliseconds)
+            df[dt_col] = pd.to_datetime(df[dt_col], errors='coerce')
+            
+            # Drop rows where datetime parsing failed
+            df = df.dropna(subset=[dt_col])
             df = df.sort_values(by=dt_col)
             
             # Downsample from seconds to 1-minute intervals (takes the 1st record of each minute)
-            # This cleanly drops the other 59 seconds per minute
             df.set_index(dt_col, inplace=True)
             df_resampled = df.resample('1T').first().dropna(how='all').reset_index()
             
