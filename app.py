@@ -6,8 +6,8 @@ import io
 
 st.set_page_config(page_title="Wind Data Analyzer", layout="wide")
 
-st.title("📊 Wind Speed Data Analyzer")
-st.write("Upload your wind data file to downsample, filter, and visualize.")
+st.title("Wind Speed Data Analyzer")
+st.write("Upload your wind data file to filter and visualize.")
 
 uploaded_file = st.file_uploader("Choose a CSV file", type=["csv", "txt"])
 
