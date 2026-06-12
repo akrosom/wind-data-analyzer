@@ -29,7 +29,6 @@ if uploaded_file is not None:
             for line in text_content.splitlines():
                 stripped = line.strip()
                 if stripped:
-                    # Remove leading and trailing double quotes if they wrap the line
                     if stripped.startswith('"') and stripped.endswith('"'):
                         stripped = stripped[1:-1]
                     clean_lines.append(stripped)
@@ -38,7 +37,7 @@ if uploaded_file is not None:
                 st.error("The uploaded file appears to be empty.")
                 st.stop()
                 
-            # 3. Pass clean lines to Pandas (now using the 1st line as header!)
+            # 3. Pass clean lines to Pandas
             clean_csv_io = io.StringIO("\n".join(clean_lines))
             df = pd.read_csv(clean_csv_io, sep=';')
             
@@ -53,14 +52,11 @@ if uploaded_file is not None:
                 st.write("Current columns detected:", list(df.columns))
                 st.stop()
             
-            # 4. Map columns by position (since header is active now)
-            # Column 0 -> DateTime
-            # Columns 2, 3, 4, 5 -> Wind speed parameters
+            # 4. Map columns by position
             dt_col = df.columns[0]
             value_cols = list(df.columns[2:6])
             
-            # Clean up column names for the legend (shorten them dynamically)
-            # e.g., "Environmental Conditions Wind Speed 3 Second Gust  [m/s]" -> "3 Second Gust  [m/s]"
+            # Clean up column names for the legend
             rename_dict = {}
             for col in value_cols:
                 short_name = col.replace("Environmental Conditions Wind Speed ", "")
@@ -74,12 +70,13 @@ if uploaded_file is not None:
             df = df.dropna(subset=[dt_col])
             df = df.sort_values(by=dt_col)
             
-            # Set index and downsample to 1-minute intervals (take first second of each minute)
+            # Set index and downsample to 1-minute intervals USING '1min'
             df.set_index(dt_col, inplace=True)
             for col in new_value_cols:
                 df[col] = pd.to_numeric(df[col], errors='coerce')
                 
-            df_resampled = df.resample('1T').first().dropna(how='all').reset_index()
+            # TUTAJ NASTĄPIŁA POPRAWKA: '1min' zamiast '1T'
+            df_resampled = df.resample('1min').first().dropna(how='all').reset_index()
             
             st.success("CSV file successfully cleaned from wrapping quotes and downsampled!")
             
