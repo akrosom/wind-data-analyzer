@@ -7,7 +7,7 @@ import io
 
 st.set_page_config(page_title="Wind Data Analyzer", layout="wide")
 
-st.title("༄ Wind Data Analyzer")
+st.title("Wind Data Analyzer")
 st.write("Upload your data file.")
 
 # Enhanced function to generate Excel with TWO embedded charts
